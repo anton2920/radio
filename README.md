@@ -1,4 +1,4 @@
-# HTTP online radio server
+# HTTP radio server
 
 ## Licence
 
