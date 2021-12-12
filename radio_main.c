@@ -22,34 +22,53 @@
 #include "radio_http.h"
 
 
+#define RADIO_SERVER_ADDRESS "10.0.0.2"
+#define RADIO_SERVER_PORT    1500
+
 int main()
 {
-    GError *error = NULL;
-    GMainLoop *main_loop;
     GSocketAddress *sockaddr;
     SoupServer *radio_server;
+    GError *error = NULL;
+    GMainLoop *main_loop;
+    GInetAddress *inaddr;
+
+    /* TODO: add CLI options */
 
     /* Creating main loop object */
     main_loop = g_main_loop_new(NULL, FALSE);
     g_assert_nonnull(main_loop);
 
     /* Creating HTTP radio server object */
-    radio_server = soup_server_new("", NULL);
+    radio_server = soup_server_new(NULL, NULL);
     g_assert_nonnull(radio_server);
 
-    sockaddr = (GSocketAddress *) g_network_address_new("31.132.166.156", 1500);
+    inaddr = g_inet_address_new_from_string(RADIO_SERVER_ADDRESS);
+    g_assert_nonnull(inaddr);
+
+    sockaddr = g_inet_socket_address_new(inaddr, RADIO_SERVER_PORT);
     g_assert_nonnull(sockaddr);
+    g_object_unref(inaddr);
 
     soup_server_add_handler(radio_server, "/radio", radio_server_radio_cb, NULL, NULL);
 
     if (!soup_server_listen(radio_server, sockaddr, 0, &error)) {
         g_assert_nonnull(error);
         g_printerr("soup_server_listen() failed: %s\n", error->message);
+        g_object_unref(sockaddr);
+        g_object_unref(radio_server);
+        g_object_unref(main_loop);
         exit(EXIT_FAILURE);
     }
+    g_object_unref(sockaddr);
+
+    g_print("Listening on %s:%d\n", RADIO_SERVER_ADDRESS, RADIO_SERVER_PORT);
 
     /* Main loop for asynchronous operation */
     g_main_loop_run(main_loop);
+
+    g_object_unref(radio_server);
+    g_object_unref(main_loop);
 
     return EXIT_SUCCESS;
 }

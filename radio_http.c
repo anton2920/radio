@@ -29,12 +29,18 @@ void radio_server_radio_cb(SoupServer *server,
                            SoupClientContext *client,
                            gpointer user_data)
 {
+    GSocketAddress *remote_sockaddr;
+
     g_assert_nonnull(server);
     g_assert_nonnull(msg);
     g_assert_nonnull(path);
-    g_assert_nonnull(query);
+    /* 'query' can be NULL */
     g_assert_nonnull(client);
     /* 'user_data' can be NULL */
 
+    remote_sockaddr = soup_client_context_get_remote_address(client);
+    g_assert_nonnull(remote_sockaddr);
+
+    g_print("Accepted connection from %s:%d\n", );
 
 }
