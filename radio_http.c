@@ -17,6 +17,7 @@
 */
 
 
+#include <alsa/asoundlib.h>
 #include <libsoup/soup.h>
 
 #include "radio_http.h"
@@ -30,17 +31,21 @@ void radio_server_radio_cb(SoupServer *server,
                            gpointer user_data)
 {
     GSocketAddress *remote_sockaddr;
+    snd_pcm_t *audio_handle;
 
     g_assert_nonnull(server);
     g_assert_nonnull(msg);
     g_assert_nonnull(path);
     /* 'query' can be NULL */
     g_assert_nonnull(client);
-    /* 'user_data' can be NULL */
+    g_assert_nonnull(user_data);
 
     remote_sockaddr = soup_client_context_get_remote_address(client);
     g_assert_nonnull(remote_sockaddr);
 
-    g_print("Accepted connection from %s:%d\n", );
+    g_message("Accepted connection from %s:%d\n",
+              g_inet_address_to_string(g_inet_socket_address_get_address(remote_sockaddr)),
+              g_inet_socket_address_get_port(remote_sockaddr));
+
 
 }

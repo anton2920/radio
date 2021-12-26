@@ -16,17 +16,22 @@
  along with HTTP radio server. If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+#include <alsa/asoundlib.h>
 #include <glib.h>
 #include <libsoup/soup.h>
 
+#include "radio_audio.h"
 #include "radio_http.h"
 
 
 #define RADIO_SERVER_ADDRESS "10.0.0.2"
 #define RADIO_SERVER_PORT    1500
 
+
 int main()
 {
+    snd_pcm_t *capture_handle;
     GSocketAddress *sockaddr;
     SoupServer *radio_server;
     GError *error = NULL;
@@ -34,6 +39,14 @@ int main()
     GInetAddress *inaddr;
 
     /* TODO: add CLI options */
+
+    /* Opening selected (TODO) audio device */
+    capture_handle = radio_open_audio_device("hw:0", &error);
+    if (capture_handle == NULL) {
+        g_assert_nonnull(error);
+        g_printerr("radio_open_audio_device() failed: %s\n", error->message);
+        exit(EXIT_FAILURE);
+    }
 
     /* Creating main loop object */
     main_loop = g_main_loop_new(NULL, FALSE);
@@ -50,7 +63,7 @@ int main()
     g_assert_nonnull(sockaddr);
     g_object_unref(inaddr);
 
-    soup_server_add_handler(radio_server, "/radio", radio_server_radio_cb, NULL, NULL);
+    soup_server_add_handler(radio_server, "/radio", radio_server_radio_cb, capture_handle, NULL);
 
     if (!soup_server_listen(radio_server, sockaddr, 0, &error)) {
         g_assert_nonnull(error);
@@ -62,7 +75,7 @@ int main()
     }
     g_object_unref(sockaddr);
 
-    g_print("Listening on %s:%d\n", RADIO_SERVER_ADDRESS, RADIO_SERVER_PORT);
+    g_message("Listening on %s:%d\n", RADIO_SERVER_ADDRESS, RADIO_SERVER_PORT);
 
     /* Main loop for asynchronous operation */
     g_main_loop_run(main_loop);
