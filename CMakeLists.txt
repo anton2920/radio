@@ -19,6 +19,3 @@ add_executable(radio radio_main.c ${RADIO_HTTP} ${RADIO_CLI} ${RADIO_AUDIO})
 target_include_directories(radio PUBLIC ${GLIB_INCLUDE_DIRS})
 target_link_directories(radio PUBLIC ${GLIB_INCLUDE_DIRS})
 target_link_libraries(radio PkgConfig::GLIB asound)
-
-add_executable(alsa_test alsa_test.c)
-target_link_libraries(alsa_test asound)
