@@ -20,6 +20,9 @@
 #ifndef RADIO_HTTP_H
 #define RADIO_HTTP_H
 
+#define RADIO_ENDPOINT_PATH "/radio"
+
+
 void radio_server_radio_cb(SoupServer *server,
                            SoupMessage *msg,
                            const char *path,

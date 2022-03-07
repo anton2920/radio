@@ -17,10 +17,14 @@
  */
 
 
-#include <alsa/asoundlib.h>
 #include <glib.h>
+#include <pulse/error.h>
 
 #include "radio_audio.h"
+
+
+#define RADIO_APPLICATION_NAME  "radio"
+#define RADIO_STREAM_NAME       "radio-record-stream"
 
 
 static GQuark radio_audio_error_quark(void)
@@ -29,20 +33,51 @@ static GQuark radio_audio_error_quark(void)
 }
 
 
-snd_pcm_t *radio_open_audio_device(const gchar *device_name, GError **error)
+radio_audio_handle_t *radio_audio_open_device(const gchar *device_name, GError **error)
 {
-    snd_pcm_t *audio_handle;
-    gint err;
+    const pa_sample_spec audio_handle_specs = {
+        .format = PA_SAMPLE_S16LE,
+        .rate = 48000,
+        .channels = 2
+    };
+    pa_simple *audio_handle;
+    gint err_code;
 
-    g_assert_nonnull(device_name);
+    /* 'device_name' can be NULL */
 
-    if ((err = snd_pcm_open(&audio_handle, device_name, SND_PCM_STREAM_CAPTURE, 0)) < 0) {
+    if ((audio_handle = pa_simple_new(NULL, RADIO_APPLICATION_NAME, PA_STREAM_RECORD,
+                                      device_name, RADIO_STREAM_NAME, &audio_handle_specs,
+                                      NULL, NULL, &err_code)) == 0) {
         g_assert((error != NULL) || (*error == NULL));
         g_set_error(error, RADIO_AUDIO_ERROR, RADIO_AUDIO_ERROR_OPEN,
                     "failed to open audio device %s; %s", device_name,
-                    snd_strerror(err));
+                    pa_strerror(err_code));
         return NULL;
     }
 
     return audio_handle;
+}
+
+
+gboolean radio_audio_read(radio_audio_handle_t *capture_device, gchar *buffer, gsize bufsize, GError **error)
+{
+    gssize nbytes;
+    gint err_code;
+
+    if ((nbytes = pa_simple_read(capture_device, buffer, bufsize, &err_code)) < 0) {
+        g_assert((error != NULL) || (*error == NULL));
+        g_set_error(error, RADIO_AUDIO_ERROR, RADIO_AUDIO_ERROR_READ,
+                    "failed to read from audio device; %s",
+                    pa_strerror(err_code));
+    }
+
+    return nbytes ? FALSE : TRUE;
+}
+
+
+void radio_audio_free(radio_audio_handle_t *capture_device)
+{
+    g_assert_nonnull(capture_device);
+
+    pa_simple_free(capture_device);
 }

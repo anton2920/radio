@@ -18,68 +18,65 @@
 
 
 #include <glib.h>
+#include <glib-unix.h>
 #include <libsoup/soup.h>
+#include <pulse/simple.h>
 
-#include "radio_audio.h"
 #include "radio_http.h"
 
 
-#define RADIO_SERVER_ADDRESS "10.0.0.2"
 #define RADIO_SERVER_PORT    1500
+
+
+gboolean exit_sighandler(gpointer _data)
+{
+    GMainLoop *main_loop;
+
+    g_assert_nonnull(_data);
+
+    main_loop = (GMainLoop *) _data;
+
+    g_main_loop_quit(main_loop);
+    return TRUE;
+}
 
 
 int main()
 {
-    GSocketAddress *sockaddr;
-    SoupServer *radio_server;
+    g_autoptr(SoupServer) radio_server;
+    g_autoptr(GMainLoop) main_loop;
     GError *error = NULL;
-    GMainLoop *main_loop;
-    GInetAddress *inaddr;
 
     /* TODO: add CLI options */
-
-    /* Opening selected (TODO) audio device */
-    capture_handle = radio_open_audio_device("hw:0", &error);
-    if (capture_handle == NULL) {
-        g_assert_nonnull(error);
-        g_printerr("radio_open_audio_device() failed: %s\n", error->message);
-        exit(EXIT_FAILURE);
-    }
 
     /* Creating main loop object */
     main_loop = g_main_loop_new(NULL, FALSE);
     g_assert_nonnull(main_loop);
 
+#if defined(__unix__)
+    /* Installing Unix signal handlers to ensure clean
+     * shutdown even if for example the user presses Ctrl+C
+     */
+    g_unix_signal_add(SIGINT, exit_sighandler, main_loop);
+    g_unix_signal_add(SIGTERM, exit_sighandler, main_loop);
+#endif
+
     /* Creating HTTP radio server object */
     radio_server = soup_server_new(NULL, NULL);
     g_assert_nonnull(radio_server);
 
-    inaddr = g_inet_address_new_from_string(RADIO_SERVER_ADDRESS);
-    g_assert_nonnull(inaddr);
+    soup_server_add_handler(radio_server, RADIO_ENDPOINT_PATH, radio_server_radio_cb, NULL, NULL);
 
-    sockaddr = g_inet_socket_address_new(inaddr, RADIO_SERVER_PORT);
-    g_assert_nonnull(sockaddr);
-    g_object_unref(inaddr);
-
-    soup_server_add_handler(radio_server, "/radio", radio_server_radio_cb, capture_handle, NULL);
-
-    if (!soup_server_listen(radio_server, sockaddr, 0, &error)) {
+    if (!soup_server_listen_all(radio_server, RADIO_SERVER_PORT, 0, &error)) {
         g_assert_nonnull(error);
         g_printerr("soup_server_listen() failed: %s\n", error->message);
-        g_object_unref(sockaddr);
-        g_object_unref(radio_server);
-        g_object_unref(main_loop);
         exit(EXIT_FAILURE);
     }
-    g_object_unref(sockaddr);
 
-    g_message("Listening on %s:%d\n", RADIO_SERVER_ADDRESS, RADIO_SERVER_PORT);
+    g_message("Listening on *:%d\n", RADIO_SERVER_PORT);
 
     /* Main loop for asynchronous operation */
     g_main_loop_run(main_loop);
-
-    g_object_unref(radio_server);
-    g_object_unref(main_loop);
 
     return EXIT_SUCCESS;
 }
