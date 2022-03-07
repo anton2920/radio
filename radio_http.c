@@ -51,7 +51,7 @@ static void radio_server_wrote_headers_cb(SoupMessage *_msg G_GNUC_UNUSED,
     ostream = g_io_stream_get_output_stream(http_stream);
     g_assert_nonnull(ostream);
 
-    /* TODO: replace hardcoded constants!!! */
+    /* TODO: replace hardcoded constants */
     /* Filling 'RIFF' header */
     strcpy(wav_header.riff.chunk_id, "RIFF");
     wav_header.riff.chunk_size = 36 + RADIO_AUDIO_BUFFER_SIZE;
@@ -155,7 +155,7 @@ void radio_server_radio_cb(SoupServer *server,
         return;
     }
 
-    /* Opening selected (TODO) audio device */
+    /* Opening selected audio device */
     ctx = g_new(radio_server_context_t, 1);
     g_assert_nonnull(ctx);
 
@@ -175,4 +175,5 @@ void radio_server_radio_cb(SoupServer *server,
     soup_message_headers_set_encoding(msg->response_headers, SOUP_ENCODING_EOF);
 
     g_signal_connect(G_OBJECT(msg), "wrote-headers", G_CALLBACK(radio_server_wrote_headers_cb), ctx);
+    /* g_signal_connect(); */ /* TODO: handle "finished" */
 }
