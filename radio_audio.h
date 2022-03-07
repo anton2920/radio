@@ -24,7 +24,7 @@
 #include <pulse/simple.h>
 
 
-#define RADIO_AUDIO_BUFFER_SIZE 1024
+#define RADIO_AUDIO_BUFFER_SIZE 1920
 #define RADIO_AUDIO_ERROR radio_audio_error_quark()
 
 

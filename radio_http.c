@@ -76,6 +76,8 @@ static void radio_server_wrote_headers_cb(SoupMessage *_msg G_GNUC_UNUSED,
                               &wav_header, sizeof(wav_header),
                               NULL, &error) < 0) {
         g_warning("g_output_stream_write() failed: %s", error->message);
+        g_output_stream_close(ostream, NULL, NULL);
+        g_object_unref(http_stream);
         radio_audio_free(ctx.capture_device);
         return;
     }
@@ -84,20 +86,29 @@ static void radio_server_wrote_headers_cb(SoupMessage *_msg G_GNUC_UNUSED,
         /* Reading from playback device */
         if (radio_audio_read(ctx.capture_device, buffer, sizeof(buffer), &error) < 0) {
             g_warning("radio_audio_read() failed: %s", error->message);
+            g_output_stream_close(ostream, NULL, NULL);
+            g_object_unref(http_stream);
             radio_audio_free(ctx.capture_device);
+            g_error_free(error);
             break;
         }
 
         /* Writing data to client */
         if (g_output_stream_write(ostream, buffer, sizeof(buffer), NULL, &error) < 0) {
             g_warning("g_output_stream_write() failed: %s", error->message);
+            g_output_stream_close(ostream, NULL, NULL);
+            g_object_unref(http_stream);
             radio_audio_free(ctx.capture_device);
+            g_error_free(error);
             break;
         }
         /* Flushing stream */
         if (!g_output_stream_flush(ostream, NULL, &error)) {
             g_warning("g_output_stream_flush() failed: %s", error->message);
+            g_output_stream_close(ostream, NULL, NULL);
+            g_object_unref(http_stream);
             radio_audio_free(ctx.capture_device);
+            g_error_free(error);
             break;
         }
     }
@@ -114,6 +125,7 @@ void radio_server_radio_cb(SoupServer *server,
     GSocketAddress *remote_sockaddr;
     radio_server_context_t *ctx;
     GError *error = NULL;
+    gchar *addr_str;
 
     g_assert_nonnull(server);
     g_assert_nonnull(msg);
@@ -125,9 +137,13 @@ void radio_server_radio_cb(SoupServer *server,
     remote_sockaddr = soup_client_context_get_remote_address(client);
     g_assert_nonnull(remote_sockaddr);
 
-    g_message("Accepted connection from %s:%d\n",
-              g_inet_address_to_string(g_inet_socket_address_get_address((GInetSocketAddress *) remote_sockaddr)),
+    addr_str = g_inet_address_to_string(g_inet_socket_address_get_address((GInetSocketAddress *) remote_sockaddr));
+    g_assert_nonnull(addr_str);
+
+    g_message("Accepted connection from %s:%d\n", addr_str,
               g_inet_socket_address_get_port((GInetSocketAddress *) remote_sockaddr));
+
+    g_free(addr_str);
 
     if (msg->method != SOUP_METHOD_GET) {
         soup_message_set_status(msg, SOUP_STATUS_NOT_IMPLEMENTED);
