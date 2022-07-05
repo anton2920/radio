@@ -1,6 +1,6 @@
 /*
    HTTP radio server — free on-premise HTTP radio server only for good music
-   Copyright © 2021 @anton2920
+   Copyright © 2021-2022 @anton2920
 
    This file is part of HTTP radio server.
 
