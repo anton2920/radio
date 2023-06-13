@@ -37,7 +37,7 @@ type WAVEHeader struct {
 func RadioHandler(w http.ResponseWriter, r *http.Request) {
 	const sampleRate = 48000
 	const nchannels = 2
-	const nbytes = 4096
+	const nbytes = 1920
 	const bps = 16
 
 	log.Printf("Accepted from %s (%s)", r.RemoteAddr, r.UserAgent())
@@ -66,11 +66,14 @@ func RadioHandler(w http.ResponseWriter, r *http.Request) {
 	hdr.fmt.NumChannels = nchannels
 	hdr.fmt.SampleRate = sampleRate
 	hdr.fmt.ByteRate = sampleRate * nchannels * bps / 8
+	hdr.fmt.BlockAlign = nchannels * bps / 8
 	hdr.fmt.BitsPerSample = bps
 
 	hdr.data.SubChunk2ID = [4]byte{'d', 'a', 't', 'a'}
 	hdr.data.SubChunk2Size = nbytes
 
+	w.Header().Set(http.CanonicalHeaderKey("Content-Type"), "audio/wav")
+	w.Header().Set(http.CanonicalHeaderKey("Transfer-Encoding"), "identity")
 	w.Write((*[44]byte)((unsafe.Pointer)(&hdr))[:])
 
 	/* Writing samples. */
