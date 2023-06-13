@@ -34,11 +34,21 @@ type WAVEHeader struct {
 	}
 }
 
+var lock chan struct{}
+
 func RadioHandler(w http.ResponseWriter, r *http.Request) {
 	const sampleRate = 48000
 	const nchannels = 2
 	const nbytes = 1920
 	const bps = 16
+
+	select {
+	case lock <- struct{}{}:
+	default:
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+	defer func() { <-lock }()
 
 	log.Printf("Accepted from %s (%s)", r.RemoteAddr, r.UserAgent())
 
@@ -99,7 +109,9 @@ func main() {
 	netAddr := fmt.Sprintf("0.0.0.0:%d", *port)
 
 	http.HandleFunc("/radio", RadioHandler)
-	log.Print("Listening on ", netAddr)
 
+	lock = make(chan struct{}, 1)
+
+	log.Print("Listening on ", netAddr)
 	log.Fatal(http.ListenAndServe(netAddr, nil))
 }
