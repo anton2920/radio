@@ -6,6 +6,6 @@ Audio is transmitted as `audio/wav`, so if you don't want to experience a consid
 
 For capturing audio application uses CGO to interface with [libpulse-simple](https://freedesktop.org/software/pulseaudio/doxygen/simple.html). Logically, it requires you to have a [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) sound backend. It can be easily ported to any other sound backend, if desired.
 
-# Copyright
+## Copyright
 
 Pavlovskii Anton, 2024 (MIT). See [LICENSE](LICENSE) for more details.
