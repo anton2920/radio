@@ -12,13 +12,8 @@ done
 
 run()
 {
-	if test $VERBOSITY -gt 1; then echo "$@"; fi
-	"$@" || exit 1
-}
-
-printv()
-{
 	if test $VERBOSITY -gt 0; then echo "$@"; fi
+	"$@" || exit 1
 }
 
 # NOTE(anton2920): disable Go 1.11+ package management.
@@ -31,8 +26,7 @@ case $1 in
 		run go build $VERBOSITYFLAGS -o $PROJECT -race -gcflags='all=-N -l' main.go
 		;;
 	clean)
-		run rm -f $PROJECT $PROJECT.s $PROJECT.esc $PROJECT.test c.out cpu.pprof mem.pprof
-		run rm -rf /tmp/cover*
+		run rm -f $PROJECT
 		;;
 	fmt)
 		if which goimports >/dev/null; then
