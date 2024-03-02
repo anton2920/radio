@@ -8,4 +8,7 @@ For capturing audio application uses CGO to interface with [libpulse-simple](htt
 
 ## Copyright
 
-Pavlovskii Anton, 2024 (MIT). See [LICENSE](LICENSE) for more details.
+- Pavlovskii Anton, 2021-2023 (GPLv2).
+- Pavlovskii Anton, 2023-2024 (MIT).
+
+See [LICENSE](LICENSE) for more details.
