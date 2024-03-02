@@ -1,6 +1,6 @@
 # radio
 
-radio is the radio server that captures computer's audio and broadcasts it to one client using HTTP.
+radio is an application that captures computer's audio and broadcasts it to one client using HTTP.
 
 Audio is transmitted as `audio/wav`, so if you don't want to experience a considerable delay, use it only on LAN-connected devices.
 
